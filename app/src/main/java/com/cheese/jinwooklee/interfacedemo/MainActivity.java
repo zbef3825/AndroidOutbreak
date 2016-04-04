@@ -1,72 +1,60 @@
 package com.cheese.jinwooklee.interfacedemo;
 
+
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+
 import android.support.v4.app.FragmentActivity;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 
-import com.google.android.gms.common.api.Api;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
+import com.cheese.jinwooklee.interfacedemo.CustomeGoogle.GoogleDataListener;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends FragmentActivity {
 
     private Boolean task1 = false;
     private Boolean task2 = false;
-    private ArrayList<String> virusCountry = null;
-    private ArrayList<String> virusName = null;
+    private Boolean comp;
+    private ArrayList<HashMap<String,String>> result;
     private CustomeGoogle c_g;
-
-    public void pushDatatoListView(ArrayList<String> s){
-        //Set ListView
-        ListView listView = (ListView)findViewById(R.id.list);
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, s);
-        listView.setAdapter(arrayAdapter);
-    }
-
-    public void placemarker(){
-        if(this.task1 == true && this.task2 == true){
-            for(int i = 0; i < virusCountry.size(); i++){
-                c_g.startReverse(virusCountry.get(i));
-            }
-        }
-    }
+    private sqlData sqLiteDatabase;
+    private CustomAdapter arrayAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+
         setContentView(R.layout.activity_main);
 
-        //setup Custome google loc listener and context of this MainActivity
+        //initiate SQLite database with mainactivity context
+        //instantiation will invoke oncreate method
+        sqLiteDatabase = new sqlData(this);
+
+
+
+        //setup Custom google loc listener and context of this MainActivity
         c_g = new CustomeGoogle(this);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(c_g);
-
-        //set Array List
-        virusCountry = new ArrayList<String>();
-        virusName = new ArrayList<String>();
-
-        c_g.setGl(new CustomeGoogle.GoogleDataListener() {
+        c_g.setGl(new GoogleDataListener() {
             @Override
             public void mapLoaded() {
                 task1 = true;
@@ -79,33 +67,92 @@ public class MainActivity extends FragmentActivity {
             }
         });
 
+
         //setup the api listener
-        ApiConnection apiConnection = new ApiConnection();
+        final ApiConnection apiConnection = new ApiConnection();
 
         apiConnection.setApiCALL(new ApiConnection.myApiCALLLisenter() {
-            @Override
-            public void onRequest(String string) {
-
-            }
 
             @Override
             public void onComplete() {
                 task2 = true;
-                //Push all data into ListView
-                pushDatatoListView(virusName);
+
+                //Retreieve all or partial data from SQLite and somehow initiate geocoding
+                //Initially we will only pull 5 datasets
+                result = new ArrayList<HashMap<String, String>>();
+                result = sqLiteDatabase.retrieveRegionDatabase(7);
+                pushDatatoListView(result);
                 placemarker();
+            }
+
+            @Override
+            public void onLastRow(ArrayList<HashMap<String, String>> lastrow1) {
+                ArrayList<HashMap<String, String>> lastrow = sqLiteDatabase.retrieveRegionDatabase(1);
+                comp = sqLiteDatabase.lastrowsCompare(lastrow, lastrow1);
+                if (!comp) {
+                    apiConnection.downloadContent();
+                }
             }
 
             @Override
             public void onDataLoaded(JSONObject jsonObject) {
                 try {
-                    //add each data into virusInfo Array List
-                    virusCountry.add(jsonObject.getString("country"));
-                    virusName.add(jsonObject.getString("virusname"));
+                    //put these data into SQLite database
+                    sqLiteDatabase.insertRegionDatabase(jsonObject.getString("virusname"), jsonObject.getString("country"), jsonObject.getInt("lastupdated"));
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
             }
         });
+    }
+
+    public void sqlcountrywithVirus(String v){
+        result = sqLiteDatabase.countrywithVirus(v);
+        pushDatatoListView(result);
+        placemarker();
+    }
+
+    public void pushDatatoListView(ArrayList<HashMap<String, String>> s){
+        //Set ListView
+        ListView listView = (ListView)findViewById(R.id.list);
+
+        arrayAdapter = new CustomAdapter(this, s);
+
+        listView.setAdapter(arrayAdapter);
+
+        arrayAdapter.setArrayListener(new CustomAdapter.ArrayListener() {
+            @Override
+            public void rowClicked(String virusname) {
+                if(result.get(0).get("virusname") != virusname){
+                    sqlcountrywithVirus(virusname);
+                }
+            }
+        });
+    }
+
+    public void placemarker(){
+        if(this.task1 && this.task2){
+            c_g.startReverse(result);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        sqLiteDatabase.destroySQL(this);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);}
     }
 }
