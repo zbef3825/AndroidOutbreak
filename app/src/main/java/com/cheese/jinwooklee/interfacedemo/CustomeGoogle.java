@@ -14,8 +14,11 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Created by jinwooklee on 16-03-30.
@@ -36,8 +39,15 @@ public class CustomeGoogle implements OnMapReadyCallback{
 
     protected void placeMarker(LatLng s){
         mMap.addMarker(new MarkerOptions().position(s).title("Point from Main Activity").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
-        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(s, 2));
         gl.onJobComplete("Done");
+    }
+
+    protected void cameraZOOM(LatLng s){
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(s, 2));
+    }
+
+    protected void clearMarkers(){
+        mMap.clear();
     }
 
     public CustomeGoogle(Context context){
@@ -54,47 +64,52 @@ public class CustomeGoogle implements OnMapReadyCallback{
         this.gl = g_l;
     }
 
-    public void startReverse(String s){
+    public void startReverse(ArrayList<HashMap<String, String>> arrayList){
+
         ReverseGeoCoding RG = new ReverseGeoCoding(context);
-        RG.execute(s);
+        RG.execute(arrayList);
     }
 
-    protected class ReverseGeoCoding extends AsyncTask<String, Void, LatLng>{
-
+    protected class ReverseGeoCoding extends AsyncTask<ArrayList<HashMap<String, String>>, Void, ArrayList<LatLng>>{
         private Context context;
         public ReverseGeoCoding(Context context){
             this.context = context;
         }
 
         @Override
-        protected LatLng doInBackground(String... s) {
-            List<Address> address;
-            LatLng point = null;
+        protected ArrayList<LatLng> doInBackground(ArrayList<HashMap<String, String>>... params) {
             Geocoder geocoder = new Geocoder(this.context, Locale.getDefault());
-            try {
-                address = geocoder.getFromLocationName(s[0],1);
-                //Log.i("Location typed:", s[0]);
-                Address location = address.get(0);
-                point = new LatLng(location.getLatitude(), location.getLongitude());
-                //Log.i("Location reverse:", String.valueOf(location.getLatitude()));
-                //Log.i("Location reverse:", String.valueOf(location.getLongitude()));
-                //Log.i("Info", "Got Location!");
+            ArrayList<LatLng> arrayListLatLng = new ArrayList<>();
+            List<Address> address;
+            int size = params[0].size();
 
-            } catch (IOException e) {
-                e.printStackTrace();
+            for(int i  = 0; i < size; i++ ){
+                String country = params[0].get(i).get("country");
+                try {
+                    address = geocoder.getFromLocationName(country, 1);
+                    Address location = address.get(0);
+                    LatLng point = new LatLng(location.getLatitude(), location.getLongitude());
+                    arrayListLatLng.add(point);
+                    Log.i("Info", "Point added");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
             }
-            return point;
+            return arrayListLatLng;
         }
 
         @Override
-        protected void onPostExecute(LatLng point) {
-            super.onPostExecute(point);
-            if (point != null){
-                //Log.i("info", "Placing Marker");
-                placeMarker(point);
-            }
-            else {
-                //Log.i("Err", "Point is empty btw");
+        protected void onPostExecute(ArrayList<LatLng> arrayListLatLng) {
+            super.onPostExecute(arrayListLatLng);
+
+            clearMarkers();
+
+            for(int i = arrayListLatLng.size()-1; i >= 0; i--){
+                placeMarker(arrayListLatLng.get(i));
+                if(i == arrayListLatLng.size()-1){
+                    cameraZOOM(arrayListLatLng.get(i));
+                }
             }
         }
     }
