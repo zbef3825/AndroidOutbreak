@@ -27,15 +27,19 @@ public class MainActivity extends FragmentActivity {
     private Boolean task1 = false;
     private Boolean task2 = false;
     private Boolean comp;
-    private ArrayList<HashMap<String,String>> result;
+    private static ArrayList<HashMap<String,String>> result;
     private CustomeGoogle c_g;
     private sqlData sqLiteDatabase;
     private CustomAdapter arrayAdapter;
+    private static Boolean viewByVirus;
+    private static Boolean viewByCountry;
+    private static Boolean viewbyDefault;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -46,7 +50,9 @@ public class MainActivity extends FragmentActivity {
         //instantiation will invoke oncreate method
         sqLiteDatabase = new sqlData(this);
 
-
+        this.viewbyDefault = new Boolean(true);
+        this.viewByVirus = new Boolean(false);
+        this.viewByVirus = new Boolean(false);
 
         //setup Custom google loc listener and context of this MainActivity
         c_g = new CustomeGoogle(this);
@@ -107,6 +113,12 @@ public class MainActivity extends FragmentActivity {
         });
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        sqLiteDatabase.destroySQL(this);
+    }
+
     public void sqlcountrywithVirus(String v){
         result = sqLiteDatabase.countrywithVirus(v);
         pushDatatoListView(result);
@@ -124,9 +136,12 @@ public class MainActivity extends FragmentActivity {
         arrayAdapter.setArrayListener(new CustomAdapter.ArrayListener() {
             @Override
             public void rowClicked(String virusname) {
-                if(result.get(0).get("virusname") != virusname){
+                if (viewByVirus == false) {
                     sqlcountrywithVirus(virusname);
+                    viewbyDefault = false;
+                    viewByVirus = true;
                 }
+
             }
         });
     }
@@ -137,22 +152,14 @@ public class MainActivity extends FragmentActivity {
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        sqLiteDatabase.destroySQL(this);
-    }
-
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) {
-            getWindow().getDecorView().setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);}
+    public void outbreakonClick(View v){
+        if(this.viewbyDefault == false) {
+            result = new ArrayList<>();
+            result = sqLiteDatabase.retrieveRegionDatabase(7);
+            pushDatatoListView(result);
+            placemarker();
+            this.viewbyDefault = true;
+            this.viewByVirus = false;
+        }
     }
 }
