@@ -21,10 +21,11 @@ public class CustomAdapter extends ArrayAdapter<HashMap<String,String>> {
     private ArrayListener arrayListener;
 
     public CustomAdapter(Context context, ArrayList<HashMap<String,String>> virus) {
-        super(context, R.layout.custom_row ,virus);
-        this.data = virus;
+        super(context, R.layout.custom_row, virus);
         this.context = context;
+        this.data = virus;
     }
+
     public interface ArrayListener{
         void rowClicked(String virusname);
     }

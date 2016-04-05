@@ -34,17 +34,18 @@ public class MainActivity extends FragmentActivity {
     private static ArrayList<HashMap<String,String>> result;
     private CustomeGoogle c_g;
     private sqlData sqLiteDatabase;
-    private CustomAdapter arrayAdapter;
+    private static CustomAdapter arrayAdapter;
     private static Boolean viewByVirus;
     private static Boolean viewByCountry;
     private static Boolean viewbyDefault;
-    private SwipeRefreshLayout swipeRefreshLayout;
+    private static SwipeRefreshLayout swipeRefreshLayout;
     private int trackingState;
     private int oldItem;
     private int firstItem;
     private LayoutweightFloat num;
     private LinearLayout.LayoutParams Weightparams;
-
+    private static ListView listView;
+    private ApiConnection apiConnection;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,17 +62,48 @@ public class MainActivity extends FragmentActivity {
         //Initiate swipeRefresh
         swipeRefresh();
 
-        //Initiate Layout Weight
-        num = new LayoutweightFloat(13.0f,13.0f, 1f);
+        //Initiate ListView
+        listviewInit();
+
+        //This will get called
+        //Initiate array adapter for Custom Listview row
+        //arrayAdapterInit();
 
         //initiate SQLite database with mainactivity context
         //instantiation will invoke oncreate method
-        sqLiteDatabase = new sqlData(this);
+        sqliteData();
 
+        //Initiate View trackers
         this.viewbyDefault = new Boolean(true);
         this.viewByVirus = new Boolean(false);
-        this.viewByVirus = new Boolean(false);
+        this.viewByCountry = new Boolean(false);
 
+        //Initiate api Connection to the server
+        apiConnLis();
+
+        //Initiate googlemap API
+        googleMapApi();
+    }
+
+    public void swipeRefresh(){
+        this.swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swiperefresh);
+
+        this.swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                ArrayList<HashMap<String, String>> added = sqLiteDatabase.retrieveRegionDatabase(5, result.size());
+                result.addAll(added);
+                pushDatatoListView(result);
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
+    }
+
+    public void sqliteData(){
+        this.sqLiteDatabase = new sqlData(this);
+    }
+
+    public void googleMapApi(){
         //setup Custom google loc listener and context of this MainActivity
         c_g = new CustomeGoogle(this);
 
@@ -83,17 +115,17 @@ public class MainActivity extends FragmentActivity {
             public void mapLoaded() {
                 task1 = true;
                 placemarker();
-
             }
-
             @Override
             public void onJobComplete(String s) {
             }
         });
+    }
 
+    public void apiConnLis(){
 
         //setup the api listener
-        final ApiConnection apiConnection = new ApiConnection();
+        apiConnection = new ApiConnection();
 
         apiConnection.setApiCALL(new ApiConnection.myApiCALLLisenter() {
 
@@ -103,7 +135,7 @@ public class MainActivity extends FragmentActivity {
 
                 //Retreieve all or partial data from SQLite and somehow initiate geocoding
                 //Initially we will only pull 5 datasets
-                result = new ArrayList<HashMap<String, String>>();
+                result = new ArrayList<>();
                 result = sqLiteDatabase.retrieveRegionDatabase(7, 0);
                 pushDatatoListView(result);
                 placemarker();
@@ -131,20 +163,6 @@ public class MainActivity extends FragmentActivity {
         });
     }
 
-    public void swipeRefresh(){
-        this.swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swiperefresh);
-
-        this.swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                ArrayList<HashMap<String, String>> added = sqLiteDatabase.retrieveRegionDatabase(5, result.size());
-                result.addAll(added);
-                pushDatatoListView(result);
-                swipeRefreshLayout.setRefreshing(false);
-            }
-        });
-    }
-
 
     @Override
     protected void onStop() {
@@ -158,13 +176,30 @@ public class MainActivity extends FragmentActivity {
         placemarker();
     }
 
-    public void pushDatatoListView(ArrayList<HashMap<String, String>> s){
-        arrayAdapter = new CustomAdapter(this, s);
+    public void arrayAdapterInit(ArrayList<HashMap<String,String>> virus){
+        arrayAdapter = new CustomAdapter(this, virus);
 
-        //Set ListView
-        ListView listView = (ListView)findViewById(R.id.list);
-        listView.setAdapter(arrayAdapter);
+        //array Listener
+        arrayAdapter.setArrayListener(new CustomAdapter.ArrayListener() {
+            @Override
+            public void rowClicked(String virusname) {
+                if (viewByVirus == false) {
+                    sqlcountrywithVirus(virusname);
+                    viewbyDefault = false;
+                    viewByVirus = true;
+                }
 
+            }
+        });
+    }
+
+    public void listviewInit(){
+        listView = (ListView)findViewById(R.id.list);
+
+        //Initiate Listview Layout Weight
+        num = new LayoutweightFloat(13.0f,13.0f, 1f);
+
+        //ListView listener
         listView.setOnScrollListener(new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
@@ -212,17 +247,17 @@ public class MainActivity extends FragmentActivity {
             }
         });
 
-        arrayAdapter.setArrayListener(new CustomAdapter.ArrayListener() {
-            @Override
-            public void rowClicked(String virusname) {
-                if (viewByVirus == false) {
-                    sqlcountrywithVirus(virusname);
-                    viewbyDefault = false;
-                    viewByVirus = true;
-                }
 
-            }
-        });
+    }
+
+    public void setListView(CustomAdapter arrayAdapter){
+        listView.setAdapter(arrayAdapter);
+    }
+
+    public void pushDatatoListView(ArrayList<HashMap<String, String>> s){
+        Log.i("Adding","Virus");
+        arrayAdapterInit(s);
+        setListView(arrayAdapter);
     }
 
     public void placeAddtionalmarker(ArrayList<HashMap<String,String>> added){
