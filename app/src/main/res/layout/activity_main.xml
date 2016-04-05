@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
-
+    android:layout_height="match_parent">
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:map="http://schemas.android.com/apk/res-auto"
         android:id="@+id/map"
@@ -13,30 +11,45 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context="com.cheese.jinwooklee.interfacedemo.MainActivity"
-        android:layout_weight="40"/>
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:padding="6dp"
-        android:background="#cfcf"
-        android:text="OUTBREAK REPORTS"
-        android:textColor="@color/black"
-        android:textStyle="bold"
-        android:textAlignment="center"
-        android:id="@+id/outbreakTitle"
-        android:onClick="outbreakonClick" />
-
-    <android.support.v4.widget.SwipeRefreshLayout
+        />
+    <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/swiperefresh"
-        android:layout_weight="60"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <ListView
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+        <Space
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/list"
-            />
-    </android.support.v4.widget.SwipeRefreshLayout>
-</LinearLayout>
+            android:layout_weight="4"/>
+
+        <TextView
+            android:clickable="true"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="6dp"
+            android:background="@color/outbreak"
+            android:text="OUTBREAK REPORTS"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:textAlignment="center"
+            android:id="@+id/outbreakTitle"
+            android:onClick="outbreakonClick" />
+
+        <android.support.v4.widget.SwipeRefreshLayout
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/swiperefresh"
+            android:layout_weight="13"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ListView
+                android:background="@color/white"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:id="@+id/list"
+                />
+        </android.support.v4.widget.SwipeRefreshLayout>
+    </LinearLayout>
+
+</RelativeLayout>

@@ -5,6 +5,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
@@ -86,15 +87,19 @@ public class CustomAdapter extends ArrayAdapter<HashMap<String,String>> {
         }
 
 
-        final ViewHolderItems ViewHolderItems = viewHolderItems;
 
+
+        final ViewHolderItems ViewHolderItems = viewHolderItems;
         convertView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 TextView text = (TextView)v.findViewById(R.id.virusText);
                 arrayListener.rowClicked((String)text.getText());
             }
+
         });
+
+
 
         return convertView;
 

@@ -123,7 +123,7 @@ public class sqlData{
     }
 
 
-    public ArrayList<HashMap<String, String>> retrieveRegionDatabase(int limit){
+    public ArrayList<HashMap<String, String>> retrieveRegionDatabase(int limit, int offset){
         //this is the ArrayList that will be outputted
 
         if (limit == 0){
@@ -133,7 +133,7 @@ public class sqlData{
         }
         else {
             //set limit
-            c = sqLiteDatabase.rawQuery("SELECT * FROM virusregions ORDER BY lastupdated DESC LIMIT " + String.valueOf(limit), null);
+            c = sqLiteDatabase.rawQuery("SELECT * FROM virusregions ORDER BY lastupdated DESC LIMIT " + String.valueOf(limit) + " OFFSET " + String.valueOf(offset), null);
         }
 
         return queryResult(c);

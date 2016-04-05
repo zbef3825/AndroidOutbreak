@@ -4,15 +4,20 @@ package com.cheese.jinwooklee.interfacedemo;
 import android.os.Bundle;
 
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.ViewPager;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.widget.LinearLayoutCompat;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.ArrayAdapter;
-import android.widget.ListAdapter;
+import android.widget.AbsListView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import com.cheese.jinwooklee.interfacedemo.CustomeGoogle.GoogleDataListener;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
 
 import org.json.JSONException;
@@ -20,7 +25,6 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 public class MainActivity extends FragmentActivity {
 
@@ -34,17 +38,31 @@ public class MainActivity extends FragmentActivity {
     private static Boolean viewByVirus;
     private static Boolean viewByCountry;
     private static Boolean viewbyDefault;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private int trackingState;
+    private int oldItem;
+    private int firstItem;
+    private LayoutweightFloat num;
+    private LinearLayout.LayoutParams Weightparams;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        
+        //Full Screen
+        //Needs to be initiated before setContentView
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         setContentView(R.layout.activity_main);
+
+        //Initiate swipeRefresh
+        swipeRefresh();
+
+        //Initiate Layout Weight
+        num = new LayoutweightFloat(13.0f,13.0f, 1f);
 
         //initiate SQLite database with mainactivity context
         //instantiation will invoke oncreate method
@@ -86,14 +104,14 @@ public class MainActivity extends FragmentActivity {
                 //Retreieve all or partial data from SQLite and somehow initiate geocoding
                 //Initially we will only pull 5 datasets
                 result = new ArrayList<HashMap<String, String>>();
-                result = sqLiteDatabase.retrieveRegionDatabase(7);
+                result = sqLiteDatabase.retrieveRegionDatabase(7, 0);
                 pushDatatoListView(result);
                 placemarker();
             }
 
             @Override
             public void onLastRow(ArrayList<HashMap<String, String>> lastrow1) {
-                ArrayList<HashMap<String, String>> lastrow = sqLiteDatabase.retrieveRegionDatabase(1);
+                ArrayList<HashMap<String, String>> lastrow = sqLiteDatabase.retrieveRegionDatabase(1, 0);
                 comp = sqLiteDatabase.lastrowsCompare(lastrow, lastrow1);
                 if (!comp) {
                     apiConnection.downloadContent();
@@ -113,6 +131,21 @@ public class MainActivity extends FragmentActivity {
         });
     }
 
+    public void swipeRefresh(){
+        this.swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swiperefresh);
+
+        this.swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                ArrayList<HashMap<String, String>> added = sqLiteDatabase.retrieveRegionDatabase(5, result.size());
+                result.addAll(added);
+                pushDatatoListView(result);
+                swipeRefreshLayout.setRefreshing(false);
+            }
+        });
+    }
+
+
     @Override
     protected void onStop() {
         super.onStop();
@@ -126,12 +159,58 @@ public class MainActivity extends FragmentActivity {
     }
 
     public void pushDatatoListView(ArrayList<HashMap<String, String>> s){
-        //Set ListView
-        ListView listView = (ListView)findViewById(R.id.list);
-
         arrayAdapter = new CustomAdapter(this, s);
 
+        //Set ListView
+        ListView listView = (ListView)findViewById(R.id.list);
         listView.setAdapter(arrayAdapter);
+
+        listView.setOnScrollListener(new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+                //track scrollState
+                // 0 when idle
+                // 1 when the screen is touched
+                trackingState = scrollState;
+                if(scrollState == 0){
+                    oldItem = firstItem;
+                }
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                firstItem = firstVisibleItem;
+
+                if (oldItem < firstItem && trackingState == 1){
+                    //User scrolled up
+                    num.NegNum(0.1f);
+
+                    Log.i("Info", String.valueOf(num.getNum()));
+                    Log.i("Info", String.valueOf(oldItem));
+                    Log.i("Info", String.valueOf(firstVisibleItem));
+                    Log.i("Info", String.valueOf(trackingState));
+
+
+                    //Layout_weight params
+                    Weightparams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, num.getNum());
+                    //Create reference to the SwipeRefreshLayout layout
+                    SwipeRefreshLayout swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swiperefresh);
+                    swipeRefreshLayout.setLayoutParams(Weightparams);
+                }
+                else if (oldItem > firstItem && trackingState == 1) {
+                    //User scrolled down
+                    num.addNum(0.1f * (oldItem - firstItem));
+
+                    Log.i("Info", String.valueOf(num.getNum()));
+
+                    //Layout_weight params
+                    Weightparams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, num.getNum());
+                    //Create reference to the SwipeRefreshLayout layout
+                    SwipeRefreshLayout swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swiperefresh);
+                    swipeRefreshLayout.setLayoutParams(Weightparams);
+                }
+            }
+        });
 
         arrayAdapter.setArrayListener(new CustomAdapter.ArrayListener() {
             @Override
@@ -146,16 +225,20 @@ public class MainActivity extends FragmentActivity {
         });
     }
 
+    public void placeAddtionalmarker(ArrayList<HashMap<String,String>> added){
+        c_g.startReverse(added, false);
+    }
+
     public void placemarker(){
         if(this.task1 && this.task2){
-            c_g.startReverse(result);
+            c_g.startReverse(result, true);
         }
     }
 
     public void outbreakonClick(View v){
         if(this.viewbyDefault == false) {
             result = new ArrayList<>();
-            result = sqLiteDatabase.retrieveRegionDatabase(7);
+            result = sqLiteDatabase.retrieveRegionDatabase(7, 0);
             pushDatatoListView(result);
             placemarker();
             this.viewbyDefault = true;

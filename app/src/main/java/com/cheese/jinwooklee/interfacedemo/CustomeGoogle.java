@@ -28,6 +28,7 @@ public class CustomeGoogle implements OnMapReadyCallback{
     private GoogleMap mMap;
     private GoogleDataListener gl;
     private Context context;
+    private Boolean clear;
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -37,8 +38,16 @@ public class CustomeGoogle implements OnMapReadyCallback{
         gl.mapLoaded();
     }
 
-    protected void placeMarker(LatLng s){
-        mMap.addMarker(new MarkerOptions().position(s).title("Point from Main Activity").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+    protected void placeMarker(ArrayList<LatLng> s){
+        if(clear){
+            clearMarkers();
+        }
+        for(int i = s.size()-1; i >= 0; i--){
+            mMap.addMarker(new MarkerOptions().position(s.get(i)).title("Point from Main Activity").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+            if(i == s.size()-1){
+                cameraZOOM(s.get(i));
+            }
+        }
         gl.onJobComplete("Done");
     }
 
@@ -64,8 +73,8 @@ public class CustomeGoogle implements OnMapReadyCallback{
         this.gl = g_l;
     }
 
-    public void startReverse(ArrayList<HashMap<String, String>> arrayList){
-
+    public void startReverse(ArrayList<HashMap<String, String>> arrayList, Boolean clear){
+        this.clear = clear;
         ReverseGeoCoding RG = new ReverseGeoCoding(context);
         RG.execute(arrayList);
     }
@@ -90,7 +99,7 @@ public class CustomeGoogle implements OnMapReadyCallback{
                     Address location = address.get(0);
                     LatLng point = new LatLng(location.getLatitude(), location.getLongitude());
                     arrayListLatLng.add(point);
-                    Log.i("Info", "Point added");
+                    //Log.i("Info", "Point added");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -102,15 +111,7 @@ public class CustomeGoogle implements OnMapReadyCallback{
         @Override
         protected void onPostExecute(ArrayList<LatLng> arrayListLatLng) {
             super.onPostExecute(arrayListLatLng);
-
-            clearMarkers();
-
-            for(int i = arrayListLatLng.size()-1; i >= 0; i--){
-                placeMarker(arrayListLatLng.get(i));
-                if(i == arrayListLatLng.size()-1){
-                    cameraZOOM(arrayListLatLng.get(i));
-                }
-            }
+            placeMarker(arrayListLatLng);
         }
     }
 }
