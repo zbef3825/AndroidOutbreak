@@ -43,7 +43,9 @@ public class CustomeGoogle implements OnMapReadyCallback{
             clearMarkers();
         }
         for(int i = s.size()-1; i >= 0; i--){
-            mMap.addMarker(new MarkerOptions().position(s.get(i)).title("Point from Main Activity").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+            mMap.addMarker(new MarkerOptions().position(s.get(i))
+                    .title("Point from Main Activity")
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
             if(i == s.size()-1){
                 cameraZOOM(s.get(i));
             }

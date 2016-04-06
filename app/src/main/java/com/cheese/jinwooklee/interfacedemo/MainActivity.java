@@ -1,23 +1,21 @@
 package com.cheese.jinwooklee.interfacedemo;
 
 
+import android.app.Activity;
 import android.os.Bundle;
 
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.view.ViewPager;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.widget.LinearLayoutCompat;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.Animation;
 import android.widget.AbsListView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.cheese.jinwooklee.interfacedemo.CustomeGoogle.GoogleDataListener;
-import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
 
 import org.json.JSONException;
@@ -31,21 +29,23 @@ public class MainActivity extends FragmentActivity {
     private Boolean task1 = false;
     private Boolean task2 = false;
     private Boolean comp;
+    private Boolean aniExpanded = false;
     private static ArrayList<HashMap<String,String>> result;
     private CustomeGoogle c_g;
     private sqlData sqLiteDatabase;
+    private int trackingState;
+    private int firstItem;
+    private ApiConnection apiConnection;
+    private Activity activity;
+    private Animation animation;
+    private int oldItem = 0;
+
     private static CustomAdapter arrayAdapter;
     private static Boolean viewByVirus;
-    private static Boolean viewByCountry;
-    private static Boolean viewbyDefault;
     private static SwipeRefreshLayout swipeRefreshLayout;
-    private int trackingState;
-    private int oldItem;
-    private int firstItem;
-    private LayoutweightFloat num;
-    private LinearLayout.LayoutParams Weightparams;
     private static ListView listView;
-    private ApiConnection apiConnection;
+    private TextView outbreakText;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,20 +63,14 @@ public class MainActivity extends FragmentActivity {
         swipeRefresh();
 
         //Initiate ListView
-        listviewInit();
-
-        //This will get called
-        //Initiate array adapter for Custom Listview row
-        //arrayAdapterInit();
+        listviewInit(this);
 
         //initiate SQLite database with mainactivity context
         //instantiation will invoke oncreate method
         sqliteData();
 
         //Initiate View trackers
-        this.viewbyDefault = new Boolean(true);
         this.viewByVirus = new Boolean(false);
-        this.viewByCountry = new Boolean(false);
 
         //Initiate api Connection to the server
         apiConnLis();
@@ -116,6 +110,7 @@ public class MainActivity extends FragmentActivity {
                 task1 = true;
                 placemarker();
             }
+
             @Override
             public void onJobComplete(String s) {
             }
@@ -185,7 +180,6 @@ public class MainActivity extends FragmentActivity {
             public void rowClicked(String virusname) {
                 if (viewByVirus == false) {
                     sqlcountrywithVirus(virusname);
-                    viewbyDefault = false;
                     viewByVirus = true;
                 }
 
@@ -193,61 +187,36 @@ public class MainActivity extends FragmentActivity {
         });
     }
 
-    public void listviewInit(){
+    public void listviewInit(final Activity activity){
         listView = (ListView)findViewById(R.id.list);
+        final LinearLayoutWeightAni[] animation = new LinearLayoutWeightAni[1];
+        this.activity = activity;
+        final SwipeRefreshLayout swipeRefreshLayout = (SwipeRefreshLayout)this.activity.findViewById(R.id.swiperefresh);
 
-        //Initiate Listview Layout Weight
-        num = new LayoutweightFloat(13.0f,13.0f, 1f);
 
         //ListView listener
         listView.setOnScrollListener(new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
-                //track scrollState
-                // 0 when idle
-                // 1 when the screen is touched
                 trackingState = scrollState;
-                if(scrollState == 0){
-                    oldItem = firstItem;
-                }
             }
 
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                //Log.i("firstVisible",String.valueOf(firstVisibleItem));
+
                 firstItem = firstVisibleItem;
+                if(firstItem > oldItem){
+                    //Expanding
+                    animation[0] = new LinearLayoutWeightAni(swipeRefreshLayout, 0, activity, R.id.swiperefresh);
+                    animation[0].setDuration(800);
+                    swipeRefreshLayout.startAnimation(animation[0]);
+                    aniExpanded = true;
 
-                if (oldItem < firstItem && trackingState == 1){
-                    //User scrolled up
-                    num.NegNum(0.1f);
-
-                    Log.i("Info", String.valueOf(num.getNum()));
-                    Log.i("Info", String.valueOf(oldItem));
-                    Log.i("Info", String.valueOf(firstVisibleItem));
-                    Log.i("Info", String.valueOf(trackingState));
-
-
-                    //Layout_weight params
-                    Weightparams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, num.getNum());
-                    //Create reference to the SwipeRefreshLayout layout
-                    SwipeRefreshLayout swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swiperefresh);
-                    swipeRefreshLayout.setLayoutParams(Weightparams);
-                }
-                else if (oldItem > firstItem && trackingState == 1) {
-                    //User scrolled down
-                    num.addNum(0.1f * (oldItem - firstItem));
-
-                    Log.i("Info", String.valueOf(num.getNum()));
-
-                    //Layout_weight params
-                    Weightparams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT, num.getNum());
-                    //Create reference to the SwipeRefreshLayout layout
-                    SwipeRefreshLayout swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swiperefresh);
-                    swipeRefreshLayout.setLayoutParams(Weightparams);
+                    oldItem = firstVisibleItem;
                 }
             }
         });
-
-
     }
 
     public void setListView(CustomAdapter arrayAdapter){
@@ -255,7 +224,6 @@ public class MainActivity extends FragmentActivity {
     }
 
     public void pushDatatoListView(ArrayList<HashMap<String, String>> s){
-        Log.i("Adding","Virus");
         arrayAdapterInit(s);
         setListView(arrayAdapter);
     }
@@ -271,13 +239,24 @@ public class MainActivity extends FragmentActivity {
     }
 
     public void outbreakonClick(View v){
-        if(this.viewbyDefault == false) {
-            result = new ArrayList<>();
-            result = sqLiteDatabase.retrieveRegionDatabase(7, 0);
-            pushDatatoListView(result);
-            placemarker();
-            this.viewbyDefault = true;
-            this.viewByVirus = false;
+        if(this.aniExpanded) {
+
+            this.oldItem = this.firstItem;
+            this.animation = new LinearLayoutWeightAni(swipeRefreshLayout, 10, activity, R.id.swiperefresh);
+            this.animation.setDuration(800);
+            this.swipeRefreshLayout.startAnimation(animation);
+            this.aniExpanded = false;
+
         }
+
+//        if(this.viewbyDefault == false) {
+//            result = new ArrayList<>();
+//            result = sqLiteDatabase.retrieveRegionDatabase(7, 0);
+//            pushDatatoListView(result);
+//            placemarker();
+//
+//            this.viewbyDefault = true;
+//            this.viewByVirus = false;
+//        }
     }
 }
