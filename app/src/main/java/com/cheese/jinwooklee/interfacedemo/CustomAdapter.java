@@ -16,7 +16,7 @@ import java.util.HashMap;
  * Created by jinwooklee on 16-04-02.
  */
 public class CustomAdapter extends ArrayAdapter<HashMap<String,String>> {
-    private static Context context;
+    private Context context;
     private ArrayList<HashMap<String, String>> data;
     private ArrayListener arrayListener;
 

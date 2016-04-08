@@ -6,16 +6,16 @@ import android.os.Bundle;
 
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.widget.AbsListView;
 import android.widget.ListView;
+import android.widget.Space;
 import android.widget.TextView;
 
-import com.cheese.jinwooklee.interfacedemo.CustomeGoogle.GoogleDataListener;
+import com.cheese.jinwooklee.interfacedemo.CustomGoogleMap.GoogleDataListener;
 import com.google.android.gms.maps.SupportMapFragment;
 
 import org.json.JSONException;
@@ -30,8 +30,8 @@ public class MainActivity extends FragmentActivity {
     private Boolean task2 = false;
     private Boolean comp;
     private Boolean aniExpanded = false;
-    private static ArrayList<HashMap<String,String>> result;
-    private CustomeGoogle c_g;
+    private ArrayList<HashMap<String,String>> result;
+    private CustomGoogleMap c_g;
     private sqlData sqLiteDatabase;
     private int trackingState;
     private int firstItem;
@@ -39,12 +39,15 @@ public class MainActivity extends FragmentActivity {
     private Activity activity;
     private Animation animation;
     private int oldItem = 0;
+    private Boolean halfExpanded = false;
+    private Boolean Expanding = false;
 
-    private static CustomAdapter arrayAdapter;
-    private static Boolean viewByVirus;
-    private static SwipeRefreshLayout swipeRefreshLayout;
-    private static ListView listView;
+    private CustomAdapter arrayAdapter;
+    private Boolean viewByVirus;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private ListView listView;
     private TextView outbreakText;
+    private Space space;
 
 
     @Override
@@ -77,6 +80,7 @@ public class MainActivity extends FragmentActivity {
 
         //Initiate googlemap API
         googleMapApi();
+
     }
 
     public void swipeRefresh(){
@@ -99,11 +103,13 @@ public class MainActivity extends FragmentActivity {
 
     public void googleMapApi(){
         //setup Custom google loc listener and context of this MainActivity
-        c_g = new CustomeGoogle(this);
+        c_g = new CustomGoogleMap(this, this);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(c_g);
+
+
         c_g.setGl(new GoogleDataListener() {
             @Override
             public void mapLoaded() {
@@ -115,6 +121,7 @@ public class MainActivity extends FragmentActivity {
             public void onJobComplete(String s) {
             }
         });
+
     }
 
     public void apiConnLis(){
@@ -199,6 +206,9 @@ public class MainActivity extends FragmentActivity {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
                 trackingState = scrollState;
+                if(trackingState == 0){
+                    oldItem = firstItem;
+                }
             }
 
             @Override
@@ -206,14 +216,38 @@ public class MainActivity extends FragmentActivity {
                 //Log.i("firstVisible",String.valueOf(firstVisibleItem));
 
                 firstItem = firstVisibleItem;
-                if(firstItem > oldItem){
-                    //Expanding
-                    animation[0] = new LinearLayoutWeightAni(swipeRefreshLayout, 0, activity, R.id.swiperefresh);
+                if (firstItem > oldItem && trackingState == 2) {
+
+                    //from half to full expand
+                    space = (Space)findViewById(R.id.spaceee);
+                    animation[0] = new LinearLayoutWeightAni(space,10f, activity, R.id.spaceee);
+                    animation[0].setDuration(900);
+                    space.startAnimation(animation[0]);
+
+                    animation[0] = new LinearLayoutWeightAni(swipeRefreshLayout, 0f , activity, R.id.swiperefresh);
                     animation[0].setDuration(800);
                     swipeRefreshLayout.startAnimation(animation[0]);
-                    aniExpanded = true;
 
-                    oldItem = firstVisibleItem;
+                    //only half is true because it's not fully Expanded yet
+                    halfExpanded = false;
+                    aniExpanded = true;
+                }
+                else if (firstItem < oldItem && trackingState == 2){
+
+                    //Collapsing
+                    space = (Space)findViewById(R.id.spaceee);
+                    animation[0] = new LinearLayoutWeightAni(space, 0.55f, activity, R.id.spaceee);
+                    animation[0].setDuration(900);
+                    space.startAnimation(animation[0]);
+
+                    animation[0] = new LinearLayoutWeightAni(swipeRefreshLayout, 10f , activity, R.id.swiperefresh);
+                    animation[0].setDuration(800);
+                    swipeRefreshLayout.startAnimation(animation[0]);
+
+                    //only half is true because it's not fully Expanded yet
+                    halfExpanded = false;
+                    aniExpanded = false;
+
                 }
             }
         });
@@ -239,13 +273,59 @@ public class MainActivity extends FragmentActivity {
     }
 
     public void outbreakonClick(View v){
-        if(this.aniExpanded) {
+        //Initially false for both value
+        if(!this.halfExpanded && !this.aniExpanded){
 
-            this.oldItem = this.firstItem;
-            this.animation = new LinearLayoutWeightAni(swipeRefreshLayout, 10, activity, R.id.swiperefresh);
+            this.space = (android.widget.Space)findViewById(R.id.spaceee);
+            this.animation = new LinearLayoutWeightAni(space, 5f, activity, R.id.spaceee);
+            this.animation.setDuration(900);
+            this.space.startAnimation(animation);
+
+            this.animation = new LinearLayoutWeightAni(swipeRefreshLayout, 10f, activity, R.id.swiperefresh);
             this.animation.setDuration(800);
             this.swipeRefreshLayout.startAnimation(animation);
+
+            //only half is true because it's not fully Expanded yet
+            this.halfExpanded = true;
+
+            this.oldItem = this.firstItem;
+
+        }
+
+        else if(!this.aniExpanded && this.halfExpanded) {
+
+            this.space = (Space)findViewById(R.id.spaceee);
+            this.animation = new LinearLayoutWeightAni(space,10f, activity, R.id.spaceee);
+            this.animation.setDuration(900);
+            this.space.startAnimation(animation);
+
+            this.animation = new LinearLayoutWeightAni(swipeRefreshLayout, 0f , activity, R.id.swiperefresh);
+            this.animation.setDuration(800);
+            this.swipeRefreshLayout.startAnimation(animation);
+
+            //only half is true because it's not fully Expanded yet
+            this.halfExpanded = false;
+            this.aniExpanded = true;
+
+            this.oldItem = this.firstItem;
+
+        }
+        else{
+
+            this.space = (Space)findViewById(R.id.spaceee);
+            this.animation = new LinearLayoutWeightAni(space,0.55f, activity, R.id.spaceee);
+            this.animation.setDuration(900);
+            this.space.startAnimation(animation);
+
+            this.animation = new LinearLayoutWeightAni(swipeRefreshLayout, 10f , activity, R.id.swiperefresh);
+            this.animation.setDuration(800);
+            this.swipeRefreshLayout.startAnimation(animation);
+
+            //only half is true because it's not fully Expanded yet
+            this.halfExpanded = false;
             this.aniExpanded = false;
+
+            this.oldItem = this.firstItem;
 
         }
 

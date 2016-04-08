@@ -21,7 +21,8 @@
         <Space
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="4"/>
+            android:id="@+id/spaceee"
+            android:layout_weight="0.55"/>
 
         <TextView
             android:textAppearance="?android:attr/textAppearanceMedium"
@@ -29,7 +30,7 @@
             android:clickable="true"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="6dp"
+            android:padding="5dp"
             android:background="@color/outbreak"
             android:text="OUTBREAK REPORTS"
             android:textColor="@color/white"
