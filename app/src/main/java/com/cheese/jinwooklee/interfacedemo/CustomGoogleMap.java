@@ -119,14 +119,16 @@ public class CustomGoogleMap implements OnMapReadyCallback{
                 String country = params[0].get(i).get("country");
                 try {
                     address = geocoder.getFromLocationName(country, 1);
-                    Address location = address.get(0);
-                    LatLng point = new LatLng(location.getLatitude(), location.getLongitude());
+                    if(address != null && address.size() > 0){
+                        Address location = address.get(0);
+                        LatLng point = new LatLng(location.getLatitude(), location.getLongitude());
 
-                    //Log.i("ROfl",arrayListLatLng.get(i).get("China").toString());
-                    HashMap<String, LatLng> temp = new HashMap<>();
-                    temp.put(country,point);
+                        //Log.i("ROfl",arrayListLatLng.get(i).get("China").toString());
+                        HashMap<String, LatLng> temp = new HashMap<>();
+                        temp.put(country,point);
 
-                    arrayListLatLng.add(temp);
+                        arrayListLatLng.add(temp);
+                    }
 
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -139,7 +141,9 @@ public class CustomGoogleMap implements OnMapReadyCallback{
         @Override
         protected void onPostExecute(ArrayList<HashMap<String, LatLng>> arrayListLatLng) {
             super.onPostExecute(arrayListLatLng);
-            placeMarker(arrayListLatLng);
+            if(arrayListLatLng != null && arrayListLatLng.size() > 0){
+                placeMarker(arrayListLatLng);
+            }
         }
     }
 }
