@@ -1,22 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:map="http://schemas.android.com/apk/res-auto"
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context="com.cheese.jinwooklee.interfacedemo.MainActivity"
         />
+
     <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_below="@+id/toolbarApp"
         android:orientation="vertical">
         <Space
             android:layout_width="match_parent"
@@ -31,7 +33,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="5dp"
-            android:background="@color/outbreak"
+            android:background="@color/colorPrimary"
             android:text="OUTBREAK REPORTS"
             android:textColor="@color/white"
             android:textStyle="bold"
@@ -54,5 +56,27 @@
                 />
         </android.support.v4.widget.SwipeRefreshLayout>
     </LinearLayout>
+
+    <android.support.design.widget.AppBarLayout
+        xmlns:outbreak="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/toolbarApp"
+        outbreak:elevation="0dp"
+        android:background="@drawable/grad"
+        >
+
+        <android.support.v7.widget.Toolbar
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:outbreak="http://schemas.android.com/apk/res-auto"
+            android:background="@color/transparent"
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            outbreak:theme="@style/ActionBarOverlay"
+            outbreak:popupTheme="@style/ActionBarPOP"
+            outbreak:titleTextAppearance="@style/ActionBar.TitleText"/>
+
+    </android.support.design.widget.AppBarLayout>
 
 </RelativeLayout>

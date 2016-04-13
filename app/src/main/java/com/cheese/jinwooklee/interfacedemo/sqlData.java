@@ -122,7 +122,7 @@ public class sqlData{
         return queryResult(c);
     }
 
-
+    
     public ArrayList<HashMap<String, String>> retrieveRegionDatabase(int limit, int offset){
         //this is the ArrayList that will be outputted
 
@@ -163,6 +163,9 @@ public class sqlData{
         c.close();
 
         return result;
+    }
+    public void virusByTime(int date){
+
     }
 
 

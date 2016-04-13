@@ -3,12 +3,11 @@ package com.cheese.jinwooklee.interfacedemo;
 
 import android.app.Activity;
 import android.os.Bundle;
-
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.widget.AbsListView;
 import android.widget.ListView;
@@ -24,7 +23,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class MainActivity extends FragmentActivity {
+public class MainActivity extends BaseActivity{
 
     private Boolean task1 = false;
     private Boolean task2 = false;
@@ -41,6 +40,7 @@ public class MainActivity extends FragmentActivity {
     private int oldItem = 0;
     private Boolean halfExpanded = false;
     private Boolean Expanding = false;
+    private Toolbar toolbar;
 
     private CustomAdapter arrayAdapter;
     private Boolean viewByVirus;
@@ -53,14 +53,9 @@ public class MainActivity extends FragmentActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        //Full Screen
-        //Needs to be initiated before setContentView
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
         setContentView(R.layout.activity_main);
+
+        activateToolBar();
 
         //Initiate swipeRefresh
         swipeRefresh();
@@ -81,6 +76,51 @@ public class MainActivity extends FragmentActivity {
         //Initiate googlemap API
         googleMapApi();
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_About) {
+            return true;
+        }
+
+        switch(item.getItemId()){
+            case R.id.action_1week:
+                virusByTime(7);
+                return true;
+
+            case R.id.action_1month:
+                virusByTime(100);
+                return true;
+
+            case R.id.action_3month:
+                virusByTime(300);
+                return true;
+
+            case R.id.action_6month:
+                virusByTime(600);
+                return true;
+
+            case R.id.action_1year:
+                virusByTime(10000);
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     public void swipeRefresh(){
@@ -293,7 +333,7 @@ public class MainActivity extends FragmentActivity {
         }
 
         else if(!this.aniExpanded && this.halfExpanded) {
-
+            hideToolBar();
             this.space = (Space)findViewById(R.id.spaceee);
             this.animation = new LinearLayoutWeightAni(space,10f, activity, R.id.spaceee);
             this.animation.setDuration(900);
@@ -311,7 +351,7 @@ public class MainActivity extends FragmentActivity {
 
         }
         else{
-
+            showToolBar();
             this.space = (Space)findViewById(R.id.spaceee);
             this.animation = new LinearLayoutWeightAni(space,0.55f, activity, R.id.spaceee);
             this.animation.setDuration(900);
@@ -321,22 +361,16 @@ public class MainActivity extends FragmentActivity {
             this.animation.setDuration(800);
             this.swipeRefreshLayout.startAnimation(animation);
 
-            //only half is true because it's not fully Expanded yet
+           //false because it is now changing to collpased view
             this.halfExpanded = false;
             this.aniExpanded = false;
 
             this.oldItem = this.firstItem;
 
         }
+    }
 
-//        if(this.viewbyDefault == false) {
-//            result = new ArrayList<>();
-//            result = sqLiteDatabase.retrieveRegionDatabase(7, 0);
-//            pushDatatoListView(result);
-//            placemarker();
-//
-//            this.viewbyDefault = true;
-//            this.viewByVirus = false;
-//        }
+    public void virusByTime(int date){
+        sqLiteDatabase.virusByTime(date);
     }
 }
