@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -22,6 +23,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class MainActivity extends BaseActivity{
 
@@ -44,7 +46,6 @@ public class MainActivity extends BaseActivity{
 
     private CustomAdapter arrayAdapter;
     private Boolean viewByVirus;
-    private SwipeRefreshLayout swipeRefreshLayout;
     private ListView listView;
     private TextView outbreakText;
     private Space space;
@@ -56,9 +57,6 @@ public class MainActivity extends BaseActivity{
         setContentView(R.layout.activity_main);
 
         activateToolBar();
-
-        //Initiate swipeRefresh
-        swipeRefresh();
 
         //Initiate ListView
         listviewInit(this);
@@ -90,51 +88,37 @@ public class MainActivity extends BaseActivity{
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_About) {
-            return true;
-        }
-
-        switch(item.getItemId()){
+        switch (item.getItemId()){
             case R.id.action_1week:
-                virusByTime(7);
+                Log.i("Info", "Popup menu CLicked");
+                pushDatatoListView(virusByTime(7));
+                placemarker();
                 return true;
 
             case R.id.action_1month:
-                virusByTime(100);
+                pushDatatoListView(virusByTime(100));
+                placemarker();
                 return true;
 
             case R.id.action_3month:
-                virusByTime(300);
+                pushDatatoListView(virusByTime(300));
+                placemarker();
                 return true;
 
             case R.id.action_6month:
-                virusByTime(600);
+                pushDatatoListView(virusByTime(600));
+                placemarker();
                 return true;
 
             case R.id.action_1year:
-                virusByTime(10000);
+                pushDatatoListView(virusByTime(10000));
+                placemarker();
                 return true;
 
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-
-    public void swipeRefresh(){
-        this.swipeRefreshLayout = (SwipeRefreshLayout)findViewById(R.id.swiperefresh);
-
-        this.swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                ArrayList<HashMap<String, String>> added = sqLiteDatabase.retrieveRegionDatabase(5, result.size());
-                result.addAll(added);
-                pushDatatoListView(result);
-                swipeRefreshLayout.setRefreshing(false);
-            }
-        });
     }
 
     public void sqliteData(){
@@ -175,17 +159,17 @@ public class MainActivity extends BaseActivity{
             public void onComplete() {
                 task2 = true;
 
-                //Retreieve all or partial data from SQLite and somehow initiate geocoding
-                //Initially we will only pull 5 datasets
+                //retreive data by time constraint
+                //first report is always 1 week
                 result = new ArrayList<>();
-                result = sqLiteDatabase.retrieveRegionDatabase(7, 0);
+                result = virusByTime(7);
                 pushDatatoListView(result);
                 placemarker();
             }
 
             @Override
             public void onLastRow(ArrayList<HashMap<String, String>> lastrow1) {
-                ArrayList<HashMap<String, String>> lastrow = sqLiteDatabase.retrieveRegionDatabase(1, 0);
+                ArrayList<HashMap<String, String>> lastrow = sqLiteDatabase.retrieveRegionDatabaseLastRow(1, 0);
                 comp = sqLiteDatabase.lastrowsCompare(lastrow, lastrow1);
                 if (!comp) {
                     apiConnection.downloadContent();
@@ -238,7 +222,7 @@ public class MainActivity extends BaseActivity{
         listView = (ListView)findViewById(R.id.list);
         final LinearLayoutWeightAni[] animation = new LinearLayoutWeightAni[1];
         this.activity = activity;
-        final SwipeRefreshLayout swipeRefreshLayout = (SwipeRefreshLayout)this.activity.findViewById(R.id.swiperefresh);
+        final ListView listView = (ListView)this.activity.findViewById(R.id.list);
 
 
         //ListView listener
@@ -246,7 +230,7 @@ public class MainActivity extends BaseActivity{
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
                 trackingState = scrollState;
-                if(trackingState == 0){
+                if (trackingState == 0) {
                     oldItem = firstItem;
                 }
             }
@@ -259,30 +243,29 @@ public class MainActivity extends BaseActivity{
                 if (firstItem > oldItem && trackingState == 2) {
 
                     //from half to full expand
-                    space = (Space)findViewById(R.id.spaceee);
-                    animation[0] = new LinearLayoutWeightAni(space,10f, activity, R.id.spaceee);
+                    space = (Space) findViewById(R.id.spaceee);
+                    animation[0] = new LinearLayoutWeightAni(space, 10f, activity, R.id.spaceee);
                     animation[0].setDuration(900);
                     space.startAnimation(animation[0]);
 
-                    animation[0] = new LinearLayoutWeightAni(swipeRefreshLayout, 0f , activity, R.id.swiperefresh);
+                    animation[0] = new LinearLayoutWeightAni(listView, 0f, activity, R.id.list);
                     animation[0].setDuration(800);
-                    swipeRefreshLayout.startAnimation(animation[0]);
+                    listView.startAnimation(animation[0]);
 
                     //only half is true because it's not fully Expanded yet
                     halfExpanded = false;
                     aniExpanded = true;
-                }
-                else if (firstItem < oldItem && trackingState == 2){
+                } else if (firstItem < oldItem && trackingState == 2) {
 
                     //Collapsing
-                    space = (Space)findViewById(R.id.spaceee);
+                    space = (Space) findViewById(R.id.spaceee);
                     animation[0] = new LinearLayoutWeightAni(space, 0.55f, activity, R.id.spaceee);
                     animation[0].setDuration(900);
                     space.startAnimation(animation[0]);
 
-                    animation[0] = new LinearLayoutWeightAni(swipeRefreshLayout, 10f , activity, R.id.swiperefresh);
+                    animation[0] = new LinearLayoutWeightAni(listView, 10f, activity, R.id.list);
                     animation[0].setDuration(800);
-                    swipeRefreshLayout.startAnimation(animation[0]);
+                    listView.startAnimation(animation[0]);
 
                     //only half is true because it's not fully Expanded yet
                     halfExpanded = false;
@@ -298,6 +281,7 @@ public class MainActivity extends BaseActivity{
     }
 
     public void pushDatatoListView(ArrayList<HashMap<String, String>> s){
+        this.result = s;
         arrayAdapterInit(s);
         setListView(arrayAdapter);
     }
@@ -308,7 +292,7 @@ public class MainActivity extends BaseActivity{
 
     public void placemarker(){
         if(this.task1 && this.task2){
-            c_g.startReverse(result, true);
+            c_g.startReverse(this.result, true);
         }
     }
 
@@ -321,9 +305,9 @@ public class MainActivity extends BaseActivity{
             this.animation.setDuration(900);
             this.space.startAnimation(animation);
 
-            this.animation = new LinearLayoutWeightAni(swipeRefreshLayout, 10f, activity, R.id.swiperefresh);
+            this.animation = new LinearLayoutWeightAni(listView, 10f, activity, R.id.list);
             this.animation.setDuration(800);
-            this.swipeRefreshLayout.startAnimation(animation);
+            this.listView.startAnimation(animation);
 
             //only half is true because it's not fully Expanded yet
             this.halfExpanded = true;
@@ -339,9 +323,9 @@ public class MainActivity extends BaseActivity{
             this.animation.setDuration(900);
             this.space.startAnimation(animation);
 
-            this.animation = new LinearLayoutWeightAni(swipeRefreshLayout, 0f , activity, R.id.swiperefresh);
+            this.animation = new LinearLayoutWeightAni(listView, 0f , activity, R.id.list);
             this.animation.setDuration(800);
-            this.swipeRefreshLayout.startAnimation(animation);
+            this.listView.startAnimation(animation);
 
             //only half is true because it's not fully Expanded yet
             this.halfExpanded = false;
@@ -357,9 +341,9 @@ public class MainActivity extends BaseActivity{
             this.animation.setDuration(900);
             this.space.startAnimation(animation);
 
-            this.animation = new LinearLayoutWeightAni(swipeRefreshLayout, 10f , activity, R.id.swiperefresh);
+            this.animation = new LinearLayoutWeightAni(listView, 10f , activity, R.id.list);
             this.animation.setDuration(800);
-            this.swipeRefreshLayout.startAnimation(animation);
+            this.listView.startAnimation(animation);
 
            //false because it is now changing to collpased view
             this.halfExpanded = false;
@@ -370,7 +354,8 @@ public class MainActivity extends BaseActivity{
         }
     }
 
-    public void virusByTime(int date){
-        sqLiteDatabase.virusByTime(date);
+    public ArrayList<HashMap<String, String>> virusByTime(int date){
+        viewByVirus = false;
+        return sqLiteDatabase.virusByTime(date);
     }
 }
