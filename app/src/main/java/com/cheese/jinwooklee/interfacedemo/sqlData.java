@@ -172,17 +172,17 @@ public class sqlData{
         else if (date == 10000){
             calendar.add(Calendar.YEAR, -1);
         }
-        String m;
-        String d;
+        String m = null;
+        String d = null;
 
-        if(calendar.get(Calendar.MONTH) < 10){
+        if(calendar.get(Calendar.MONTH)+1 < 10){
             m = "0"+String.valueOf(calendar.get(Calendar.MONTH)+1);
         }
         else{
             m = String.valueOf(calendar.get(Calendar.MONTH)+1);
         }
 
-        if(calendar.get(Calendar.DATE) < 10){
+        if(calendar.get(Calendar.DAY_OF_MONTH) < 10){
             d = "0"+String.valueOf(calendar.get(Calendar.DAY_OF_MONTH));
         }
         else{

@@ -20,18 +20,19 @@
         android:layout_height="match_parent"
         android:layout_below="@+id/toolbarApp"
         android:orientation="vertical">
+
         <Space
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/spaceee"
-            android:layout_weight="0.55"/>
+            android:layout_weight="1"/>
 
         <TextView
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:gravity="center"
             android:clickable="true"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="?actionBarSize"
             android:padding="5dp"
             android:background="@color/colorPrimary"
             android:text="OUTBREAK REPORTS"
@@ -55,6 +56,7 @@
             android:layout_weight="10"
             android:id="@+id/list"
             />
+
         <!--</android.support.v4.widget.SwipeRefreshLayout>-->
     </LinearLayout>
 

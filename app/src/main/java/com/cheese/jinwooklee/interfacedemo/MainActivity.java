@@ -319,7 +319,7 @@ public class MainActivity extends BaseActivity{
         else if(!this.aniExpanded && this.halfExpanded) {
             hideToolBar();
             this.space = (Space)findViewById(R.id.spaceee);
-            this.animation = new LinearLayoutWeightAni(space,10f, activity, R.id.spaceee);
+            this.animation = new LinearLayoutWeightAni(space, 10f, activity, R.id.spaceee);
             this.animation.setDuration(900);
             this.space.startAnimation(animation);
 
@@ -337,7 +337,7 @@ public class MainActivity extends BaseActivity{
         else{
             showToolBar();
             this.space = (Space)findViewById(R.id.spaceee);
-            this.animation = new LinearLayoutWeightAni(space,0.55f, activity, R.id.spaceee);
+            this.animation = new LinearLayoutWeightAni(space,1f, activity, R.id.spaceee);
             this.animation.setDuration(900);
             this.space.startAnimation(animation);
 
